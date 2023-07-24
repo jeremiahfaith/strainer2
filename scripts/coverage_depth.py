@@ -101,7 +101,7 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
 #                print(line)
                 pieces = line.rstrip().split("\t")
                 metagenomics_sample = os.path.basename(pieces[0])
-            metagenomics_sample = re.sub('^#', "", metagenomics_sample)
+                metagenomics_sample = re.sub('^#', "", metagenomics_sample)
                 variable = pieces[1]
                 value = int(pieces[2])
                 if variable == "total_kmer_evaluated":
