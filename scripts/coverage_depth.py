@@ -28,14 +28,14 @@ kmers with hits in each metagenomics file", required = True)
 #parser.add_argument("--read_hits_file", "-r", help = "File that contains the \
 #reads with hits in each metagenomics file", required = True)
 
-parser.add_argument("--min_kmer_hits", "-m", help = "The minimum number of  \
+parser.add_argument("--min_kmer_hits", "-m", help = "The minimum number of \
 kmers a read has matched to include the kmer from a read as a hit in the coverage. default 1; range (>=1)", required = False, default = 1, type=int)
 
 #parser.add_argument("--truth_table_file", "-t", help = "Tab-delimited file with strain metagenome and 1 for truth  \
 # (optional)", required = False)
 
 parser.add_argument("--background_metagenomes_file", "-b", help = "file with background metagenome names  \
- (optional)", required = False)
+(optional)", required = False)
 
 #parser.add_argument("--num_metagenome_read_file", "-n", help = "Tab-delimited file metagenome file (PE1), number of reads, rounded grouping variable name for num reads (i.e., 10M, 0.1M, etc...) \
 # (optional)", required = False)
@@ -86,17 +86,17 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
                 # TO FIX: this should be >= as it throws away kmers that occur in reads that have only 1 informative kmer (not the kmer's fault)
                 # CORRECTION: actually I'm wrong as this is just operating on total_kmers
                 if total_kmer > min_kmer_hits:
-                     unique_str = metagenomics_sample + kmer_seq
+                    unique_str = metagenomics_sample + kmer_seq
 #                     print(unique_str)
-                     if unique_str not in unique_kmers_by_metagenome:
-                         kmer_coverage_count_by_metagenome[metagenomics_sample] += 1
-                         unique_kmers_by_metagenome[unique_str] = 1
+                    if unique_str not in unique_kmers_by_metagenome:
+                        kmer_coverage_count_by_metagenome[metagenomics_sample] += 1
+                        unique_kmers_by_metagenome[unique_str] = 1
 
-                     kmer_depth_count_by_metagenome[metagenomics_sample] += 1
-                   # if kmer_read_hit_count: # want to calculate the number of kmers hit on the read to get an average depth of the kmers across all reads
-                    #    kmer_coverage_by_metagenome[metagenomics_sample] += total_informative_kmer # if a read had 10 informative kmers, then each kmer gets a "hit"
-                    #else: # just want to count how many kmers were covered with passing reads
-                     #   kmer_coverage_by_metagenome[metagenomics_sample] += 1
+                    kmer_depth_count_by_metagenome[metagenomics_sample] += 1
+                    # if kmer_read_hit_count: # want to calculate the number of kmers hit on the read to get an average depth of the kmers across all reads
+                    #     kmer_coverage_by_metagenome[metagenomics_sample] += total_informative_kmer # if a read had 10 informative kmers, then each kmer gets a "hit"
+                    # else: # just want to count how many kmers were covered with passing reads
+                    #     kmer_coverage_by_metagenome[metagenomics_sample] += 1
             else:
 #                print(line)
                 pieces = line.rstrip().split("\t")
@@ -122,7 +122,7 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
             kmer_coverage_count_by_metagenome[metagenome] = 0
             kmer_depth_count_by_metagenome[metagenome] = 0
     
- 
+
     
     #print(kmer_coverage_by_metagenome)
     return kmer_depth_count_by_metagenome, kmer_coverage_count_by_metagenome, kmer_total_evaluated_by_metagenome, read_total_evaluated_by_metagenome, genome_total_kmer, genome_total_informative_kmer
@@ -166,8 +166,8 @@ def get_metagenomic_read_counts(metagenomic_read_count_file):
     with open(metagenomic_read_count_file, "rt") as reader:
         for line in reader:
             content = line.rstrip('\n').split('\t')
-#            print("working on ", content[0], content[1], content[2])
-           # count_table[content[0]] = [content[1], content[2]]
+            # print("working on ", content[0], content[1], content[2])
+            # count_table[content[0]] = [content[1], content[2]]
             count_table[content[0]] = [content[1], content[1]]
 #                print("hit")
     return count_table
@@ -219,7 +219,7 @@ def main():
         background_meta = get_background_meta(args.background_metagenomes_file)
 
 
-   # print("strain_name\tspecies_name\tgenus_name\tnum_informative_kmers\tmetagenome\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth\tbase_metagenome\ttruth\tmetagenomic_reads\tmetagenome_reads_group\tkmer_depth_per_20B_kmer")
+#    print("strain_name\tspecies_name\tgenus_name\tnum_informative_kmers\tmetagenome\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth\tbase_metagenome\ttruth\tmetagenomic_reads\tmetagenome_reads_group\tkmer_depth_per_20B_kmer")
 #    print("strain_name\tspecies_name\tgenus_name\tgenome_num_total_kmers\tgenome_num_informative_kmers\tmetagenome\tnum_metagenomic_reads\tnum_metagenome_kmers\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth\tkmer_depth_per_20B_kmer\tbase_metagenome\tbackground")
     print("strain_name\tspecies_name\tgenus_name\tgenome_num_total_kmers\tgenome_num_informative_kmers\tmetagenome\tnum_metagenomic_reads\tnum_metagenome_kmers\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth\tkmer_depth_per_20B_kmer\tbackground")
 #    for metagenome in metagenome_targets:
