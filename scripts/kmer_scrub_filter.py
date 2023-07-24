@@ -167,7 +167,6 @@ def main():
 
         if i > 1:
             previous_strain_hash = strain_hash
-            previous_all_kmers = all_kmers
 
         strain_hash = {} # reset to 0
         all_kmers = 0 # reset to 0
@@ -199,7 +198,6 @@ def main():
 
         if i > 1:
             if strain_hash != previous_strain_hash:
-                #| all_kmers != previous_all_kmers: 
                 sys.exit("error: input files do not have identical hash and strain hash values.")
 
 
