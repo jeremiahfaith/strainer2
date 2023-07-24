@@ -14,7 +14,10 @@ With this program we then filter the set of kmers for the strain to select those
 
 # the input file
 parser.add_argument("--scrub_count_file", "-s", help = "This is the input file \
-with the kmer counts to the pangenome and metagenomes", required = True)
+with the kmer counts to the pangenome and metagenomes", required = False)
+
+parser.add_argument("--scrub_count_list", "-l", help = "A text file containing \
+a list of input files containing kmer counts", required = False)
 
 parser.add_argument("--min_fraction", "-m", help = "The minimum fraction of  \
 kmers to keep (so don't scrub everything); default 0.04; range (0.0-1.0)", required = False, default = 0.04, type=float)
@@ -138,39 +141,69 @@ def joint_scrub(min_fraction, pangenome_hash, metagenome_hash, strain_hash, all_
 def main():
     if args.min_fraction < 0.0 or args.min_fraction > 1.0:
         sys.stderr.write("error --min_fraction (-m) must be between 0.0 and 1.0 (" + args.min_fraction +  ")\n")
+    if not args.scrub_count_file and not args.scrub_count_list:
+        sys.stderr.write("error: one of scrub_count_file or scrub_count_list must be provided.")
+    if args.scrub_count_file and args.scrub_count_list:
+        sys.stderr.write("error: can provide only one of either scrub_count_file or scrub_count_list.")
 
-    strain_hash = {}
-    metagenome_hash = {}
-    pangenome_hash = {}
-    drug_genome_hash = {}
-    drug_filter = 0
+    scrub_count_files = []
+    if args.scrub_count_file:
+        scrub_count_files.append(args.scrub_count_file)
+    elif args.scrub_count_list:
+        with open(args.scrub_count_list) as file:
+            for line in file:
+                scrub_count_files.append(line.rstrip())
+
+    strain_hash = {} # n times kmer detected in self genome
+    metagenome_hash = {} # n times kmer detected in any scrub metagenome
+    pangenome_hash = {} # n times kmer detected in any scrub genome
+    drug_genome_hash = {} # n times kmer detected in non-self consortia genomes
+    drug_filter = 0 
     all_kmers = 0
-    with gzip.open(args.scrub_count_file, 'rt') as reader:
-        for line in reader:
-            if(not line.startswith('#')): # use # at the beginning to have comments and things
-                content = line.rstrip('\n').split('\t')
-                key = content[0]
-                all_kmers += 1
-                content[1] = int(content[1])
-                content[2] = int(content[2])
-                content[3] = int(content[3])
-                strain_hash[key] = content[1]
-                
 
-                if (content[2] > 0):
-                    pangenome_hash[key] = content[2]
-                if (content[3] > 0):
-                    metagenome_hash[key] = content[3]
+    for i, file in enumerate(scrub_count_files):
+        # strain_hash and all_kmers should be the same across all files being
+        # combined and should not be added up across files
 
-                if (len(content) == 5):
-                    drug_filter = 1
-                    content[4] = int(content[4])        
-                    if (content[4] > 0):
-                        drug_genome_hash[key] = content[4]
-                #strain_hash[key] = content[1]
-                #print("A:" + content[0] + " B:" + content[1] + " C:" + content[2])
+        if i > 1:
+            previous_strain_hash = strain_hash
+            previous_all_kmers = all_kmers
 
-    print("#total kmers is strain:" + str(all_kmers) + "," + str(len(strain_hash)) + " pangenome: " + str(len(pangenome_hash)) + " metagenome: " + str(len(metagenome_hash)))
+        strain_hash = {} # reset to 0
+        all_kmers = 0 # reset to 0
+
+        with gzip.open(file, 'rt') as reader:
+            for line in reader:
+                if(not line.startswith('#')): # use # at the beginning to have comments and things
+                    content = line.rstrip('\n').split('\t')
+                    key = content[0]
+                    all_kmers += 1
+                    content[1] = int(content[1])
+                    content[2] = int(content[2])
+                    content[3] = int(content[3])
+                    strain_hash[key] = content[1]
+                    
+    
+                    if (content[2] > 0):
+                        pangenome_hash[key] = pangenome_hash.get(key, 0) + content[2]
+                    if (content[3] > 0):
+                        metagenome_hash[key] = metagenome_hash.get(key, 0) + content[3]
+    
+                    if (len(content) == 5):
+                        drug_filter = 1
+                        content[4] = int(content[4])        
+                        if (content[4] > 0):
+                            drug_genome_hash[key] = drug_genome_hash.get(key, 0) + content[3]
+                    #strain_hash[key] = content[1]
+                    #print("A:" + content[0] + " B:" + content[1] + " C:" + content[2])
+
+        if i > 1:
+            if strain_hash != previous_strain_hash:
+                #| all_kmers != previous_all_kmers: 
+                sys.exit("error: input files do not have identical hash and strain hash values.")
+
+
+    print("#total kmers in strain:" + str(all_kmers) + "," + str(len(strain_hash)) + " pangenome: " + str(len(pangenome_hash)) + " metagenome: " + str(len(metagenome_hash)))
 
 
     drug_scrubbed = 0 # how many kmers are scrubbed because they overlap between strains in the same drug
