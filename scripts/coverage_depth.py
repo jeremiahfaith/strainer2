@@ -101,7 +101,7 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
 #                print(line)
                 pieces = line.rstrip().split("\t")
                 metagenomics_sample = os.path.basename(pieces[0])
-    		metagenomics_sample = re.sub('^#', "", metagenomics_sample)
+            metagenomics_sample = re.sub('^#', "", metagenomics_sample)
                 variable = pieces[1]
                 value = int(pieces[2])
                 if variable == "total_kmer_evaluated":
@@ -227,7 +227,7 @@ def main():
         read_count = "NA"
         read_count_group = "NA"
 
-#	print(metagenome)
+#    print(metagenome)
         
         num_observed_kmers_in_metagenome = -1
         num_observed_unique_kmers_in_metagenome = -1
@@ -252,7 +252,7 @@ def main():
 
         kmer_coverage = num_observed_unique_kmers_in_metagenome / float(num_genome_total_informative_kmer)
         kmer_depth = num_observed_kmers_in_metagenome / float(num_genome_total_informative_kmer)
-#	print('HERE c' + str(kmer_coverage) + ' d '+ str(kmer_depth) ,  num_observed_unique_kmers, num_observed_total_kmers, num_total_kmers)
+#    print('HERE c' + str(kmer_coverage) + ' d '+ str(kmer_depth) ,  num_observed_unique_kmers, num_observed_total_kmers, num_total_kmers)
 
         kmer_scale_constant = 2000000000
         if (num_evaluated_kmers_in_metagenome == 0):
