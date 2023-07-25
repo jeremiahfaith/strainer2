@@ -1,5 +1,6 @@
 #!/usr/bin/python 
 
+
 import argparse
 import os
 import sys
@@ -101,7 +102,7 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
 #                print(line)
                 pieces = line.rstrip().split("\t")
                 metagenomics_sample = os.path.basename(pieces[0])
-    		metagenomics_sample = re.sub('^#', "", metagenomics_sample)
+                metagenomics_sample = re.sub('^#', "", metagenomics_sample)
                 variable = pieces[1]
                 value = int(pieces[2])
                 if variable == "total_kmer_evaluated":
@@ -267,7 +268,7 @@ def main():
         if (metagenome in background_meta):
             background_status = 1
 
-        print(strain_name + "\t" + species_name + "\t" + genus_name + "\t" + str(num_genome_total_kmer) + "\t" + str(num_genome_total_informative_kmer) + "\t" + metagenome + "\t" + str(num_reads_in_metagenome) + "\t" + str(num_evaluated_kmers_in_metagenome) + "\t" + str(num_observed_unique_kmers_in_metagenome) + "\t" + str(num_observed_kmers_in_metagenome) + "\t" + str(kmer_coverage) + "\t" + str(kmer_depth) + "\t" + str(kmer_depth_scale)) + "\t" + str(background_status)
+        print(strain_name + "\t" + species_name + "\t" + genus_name + "\t" + str(num_genome_total_kmer) + "\t" + str(num_genome_total_informative_kmer) + "\t" + metagenome + "\t" + str(num_reads_in_metagenome) + "\t" + str(num_evaluated_kmers_in_metagenome) + "\t" + str(num_observed_unique_kmers_in_metagenome) + "\t" + str(num_observed_kmers_in_metagenome) + "\t" + str(kmer_coverage) + "\t" + str(kmer_depth) + "\t" + str(kmer_depth_scale) + "\t" + str(background_status))
 
             
 
