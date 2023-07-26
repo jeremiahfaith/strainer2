@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "kseq.h"
 #include "BIO_sequence.h"
 #include "BIO_hash.h"
@@ -323,7 +324,7 @@ void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1
 //			printf("file type is %d\n", is_PE);
 
 			if (is_PE == UNKNOWN_FILE_TYPE) {
-				printf("unknown file type skipping line\n");
+				printf("unknown file type skipping line (%s)\n", token);
 			}
 			else {
 				file1 = strtok(NULL, "\t");
@@ -413,7 +414,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 
 	fp = gzopen(PE1_file, "r");
 	if (fp == NULL) {
-		fprintf(stderr, "could not read file %s in quantify_hits_PE()\n", PE1_file);
+		fprintf(stderr, "could not read file (read1) %s in quantify_hits_PE() (error: %s)\n", PE1_file, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	seq = kseq_init(fp);
@@ -423,7 +424,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 		if (is_PE == IS_PAIRED_END) {
 			fp2 = gzopen(PE2_file, "r");
 			if (fp2 == NULL) {
-				fprintf(stderr, "could not read file %s in quantify_hits_PE()\n", PE2_file);
+				fprintf(stderr, "could not read file (read2) is_PE %s in quantify_hits_PE() (error: %s)\n", PE2_file), strerror(errno);
 				exit(EXIT_FAILURE);
 			}
 			seq2 = kseq_init(fp2);
