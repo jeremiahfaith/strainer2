@@ -1111,8 +1111,6 @@ char* orient_string(char *seed_seq, char *seedStrRevComp, int seed) {
 //		printf("%s\trc\n", seedStrRevComp);
 		return seedStrRevComp;
 	}
-		
-
 }
 
 int rc_strcmp(char *seed_seq, int seed) {
