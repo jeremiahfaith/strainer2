@@ -1,6 +1,7 @@
 #include <zlib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "kseq.h"
 #include "BIO_sequence.h"
 #include "BIO_hash.h"
@@ -184,10 +185,11 @@ void GEN_calculate_kmer_count(const char *file, const int seed, BIO_hash h, unsi
 	char *orientStr;
 	unsigned int *count = NULL;
 	unsigned int seq_count = 0;
-	seedStrRevComp[seed] = '\0';
 	char temp_nuc;
 	char *seed_seq;
 	int enough_reads = 0;
+	int has_N;
+
 
 	fp = gzopen(file, "r");
 	if (fp == NULL) {
@@ -199,28 +201,32 @@ void GEN_calculate_kmer_count(const char *file, const int seed, BIO_hash h, unsi
 //	printf("%s\n", file);
 
 	while (l = kseq_read(seq) >= 0) {
+		if (seq->seq.l >= seed) { // skip if a read has been trimmed shorter than the seed length
 //	while (!enough_reads && (l = kseq_read(seq)) >= 0) {
 //		if (max_reads && seq_count++ > max_reads)
 //			enough_reads = 1;
-		BIO_stringToUpper(seq->seq.s); // keep same case
-		seed_seq = seq->seq.s;
+			BIO_stringToUpper(seq->seq.s); // keep same case
+			seed_seq = seq->seq.s;
+			has_N = contains_N(seed_seq);
 
-		for (i = 0; i<seq->seq.l - seed+1; i++) { // for each possible seed position
-			temp_nuc = seed_seq[seed];
-			seed_seq[seed] = '\0';	
+	
+			for (i = 0; i<seq->seq.l - seed+1; i++) { // for each possible seed position
+				temp_nuc = seed_seq[seed];
+				seed_seq[seed] = '\0';	
 
-			orientStr = orient_string(seed_seq, seedStrRevComp, seed);
-
-			if (!contains_N(orientStr)) {
-				count = (unsigned int*)BIO_searchHash(h,orientStr);
-				if (count != NULL) {
-					count[vec_column]+=1; // increment the n-mer
-				}
-
-			} 
-
-			seed_seq[seed] = temp_nuc;
-			seed_seq++;
+				orientStr = orient_string(seed_seq, seedStrRevComp, seed);
+	
+				if (!has_N || !contains_N(orientStr)) {
+					count = (unsigned int*)BIO_searchHash(h,orientStr);
+					if (count != NULL) {
+						count[vec_column]+=1; // increment the n-mer
+					}
+	
+				} 
+	
+				seed_seq[seed] = temp_nuc;
+				seed_seq++;
+			}
 		}
 	}
 
@@ -1111,8 +1117,6 @@ char* orient_string(char *seed_seq, char *seedStrRevComp, int seed) {
 //		printf("%s\trc\n", seedStrRevComp);
 		return seedStrRevComp;
 	}
-		
-
 }
 
 int rc_strcmp(char *seed_seq, int seed) {
