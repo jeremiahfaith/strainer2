@@ -544,7 +544,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 		total_read_informative_kmer_hits = read_informative_kmer_hits + read_informative_kmer_hits_pe2;
 
 //		if ((read_kmer_hits >= min_hits_for_good_match || read_kmer_hits_pe2 >= min_hits_for_good_match) && (read_informative_kmer_hits > min_hits_for_informative_read || read_informative_kmer_hits_pe2 > min_hits_for_informative_read)) {
-		if (total_read_kmer_hits >= min_hits_for_good_match && total_read_informative_kmer_hits > min_hits_for_informative_read) {
+		if (total_read_kmer_hits >= min_hits_for_good_match && total_read_informative_kmer_hits >= min_hits_for_informative_read) {
 
 			/* no longer using the read hits output as was not as useful as the kmer coverage / depth */
 			/* printf("%s\t%d\t%d\t%d\t%d\n", PE1_file, read_kmer_hits, read_informative_kmer_hits, read_kmer_hits_pe2, read_informative_kmer_hits_pe2); */
