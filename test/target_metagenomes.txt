@@ -1,0 +1,2 @@
+PE	metagenomes/1001283B150225_150804_H5_s07_tiny_PE1.fasta.gz	metagenomes/1001283B150225_150804_H5_s07_tiny_PE2.fasta.gz
+SE	metagenomes/1001099B_150804_B6_s09_tiny_PE1.fasta.gz
