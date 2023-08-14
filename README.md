@@ -68,19 +68,19 @@ Each program if run with no parameters will provide a Usage statement of all the
 
 
 
-## Examples 
+## Example Workflows
 
 Example batch scripts (bash) or Snakemake files are available in the tests directory.
 
 
-### Batch script (bash)
+### Batch script (bash) workflow
 from inside the test directory type:
 ```
 sh example.sh
 ```
 
 
-### Snakemake
+### Snakemake workflow
 from inside the test directory type:
 
 ```
