@@ -59,15 +59,32 @@ Each program if run with no parameters will provide a Usage statement of all the
 	* output: a file of informative (i.e., scrubbed) kmers using the threshold of --min_fraction the parameter --independent will scrub the pangenome and metagenome independently for a more stringent criterion; however this can lead to very few kmers if the intersection between these two is small. The joint scrubbing is the default.
 	* joint scrubbing algorithm: to make sure differences in the number of genomes/metagenomes scrubbed aren't a main influence on the kmers that are scrubbed the kmers for each are converted into the frequencies (i.e., metagenome_kmer_count / sum_metagenome_kmer_counts; genome_kmer_count / sum_genome_kmer_count); then we go through all kmers in the genome and rank them by their MAX frequency between metagenome and genome (note that metagenome frequencies are more strongly distributed so they get they dominate the first kmers but then do not contribute much after that because the genome kmers are more evenly distributed; some interesting biology there...); the kmers are then removed from most frequent to least frequent until there are --min_fraction remaining
 * `strain_detect`
-        * input: takes a reference genome file -r, the informative kmer file from ``kmer_scrub_filter`, and -B file with multiple metagenomics files. can handle paired-end, single-end, or paired end interleaved. you need to specify the file type in the batch file or you can run individually through the commandline.
-        * output: a table where each line is an individual informative kmer found in a specific metagenome
+	* input: takes a reference genome file -r, the informative kmer file from `kmer_scrub_filter`, and -B file with multiple metagenomics files. can handle paired-end, single-end, or paired end interleaved. you need to specify the file type in the batch file or you can run individually through the commandline.
+	* output: a table where each line is an individual informative kmer found in a specific metagenome
 * `coverage_depth.py`
 	* input: the informative kmer matches from strain_detect
-        * output: the proportion of a strains informative kmers covered and the average depth at which the kmers are covered which can be used to decide if a strain is present or absent in a sample
+	* output: the proportion of a strains informative kmers covered and the average depth at which the kmers are covered which can be used to decide if a strain is present or absent in a sample
 
 
 
 
-## Documentation to do list
-* add a simple example with and without Snakemake that runs in <5 minutes
+## Example Workflows
+
+Example batch scripts (bash) or Snakemake files are available in the tests directory.
+
+
+### Batch script (bash) workflow
+from inside the test directory type:
+```
+sh example.sh
+```
+
+
+### Snakemake workflow
+from inside the test directory type:
+
+```
+snakemake -s Snakemake.strain_detect -c all
+```
+
 
