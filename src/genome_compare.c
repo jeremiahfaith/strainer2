@@ -35,7 +35,7 @@ void write_hash_distribution(BIO_hash h, FILE *out) {
 	unsigned int *count = NULL;
 
 	for (i=0; i<h->M; i++) {
-		count = h->data[i].DATA;
+		count = (unsigned int*)h->data[i].DATA;
 		if (count != NULL) 
 			if (*count > 0) 
 				fprintf(out, "%d\n", *count);
@@ -58,7 +58,7 @@ void write_hash_matrix(BIO_hash h, FILE *out, int num_files, char **file_names) 
 
 //	return;
 	for (i=0; i<h->M; i++) {
-		counts = h->data[i].DATA;
+		counts = (unsigned int*)h->data[i].DATA;
 		if (counts != NULL)  {
 			sum = 0;
 			instances = 0;
@@ -94,7 +94,7 @@ void eliminate_nonunique_keys(BIO_hash h, unsigned int *non_unique_count, unsign
 	
 
 	for (i=0; i<h->M; i++) {
-		count = h->data[i].DATA;
+		count = (unsigned int *)h->data[i].DATA;
 		if (count != NULL) {
 			*total_key_count += 1;
 			if (*count > 0) {
@@ -622,7 +622,7 @@ void GEN_hash_all_sequences_kmer_mat(const char *A_file,  const int seed) {
         while ((read_s = getline(&line, &len, fp)) != -1) 
 		num_infiles++;
 	rewind(fp);
-	infiles = malloc(num_infiles * sizeof(char*));
+	infiles = (char **)malloc(num_infiles * sizeof(char*));
 	
 	i=0;
         while ((read_s = getline(&line, &len, fp)) != -1) {
@@ -788,7 +788,7 @@ void GEN_hash_all_sequences_set_count_metagenomics(const char *A_file, const cha
 		//seqHash = GEN_hash_sequences_set_count(seqs, seed, genome_length);
         }
 
-	SR = malloc(num_strains * sizeof(GEN_strainResult));
+	SR = (GEN_strainResult*)malloc(num_strains * sizeof(GEN_strainResult));
 	for (i=0; i<num_strains; i++)  {
 		SR[i].used_seeds = SR[i].possible_seeds = SR[i].total_counts = 0;
 		SR[i].strain_name = NULL;
@@ -1008,7 +1008,7 @@ void GEN_hash_sequences_set_count_vec(const char *file, const int seed, BIO_hash
 				counts = (unsigned int*)BIO_searchHash(h,orientStr);
 				if (counts == NULL) {// only add if not there already
 //					printf("adding %s %d size %d\n", orientStr, vec_idx, vec_size);
-					counts        = calloc(vec_size, sizeof(unsigned int));
+					counts        = (unsigned int *)calloc(vec_size, sizeof(unsigned int));
 					counts[vec_idx] = default_count;
 					BIO_addHashData(h, orientStr, counts);
 				}

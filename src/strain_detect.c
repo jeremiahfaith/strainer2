@@ -1,4 +1,4 @@
-#include <zlib.h>
+#include "zlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 
 void background_filter(const char *background_file, const double fraction_to_remove, const unsigned int num_inform_kmer, BIO_hash h, const int seed) {
 	unsigned int kmer_to_keep = (int) (num_inform_kmer * fraction_to_remove);
-	unsigned int *informative_kmer_background_counts = calloc(num_inform_kmer, sizeof(unsigned int));
+	unsigned int *informative_kmer_background_counts = (unsigned int*)calloc(num_inform_kmer, sizeof(unsigned int));
 	char **allKeys = BIO_getHashKeys(h);
 	int hash_size = BIO_getHashSize(h);
 	int kmer_count = 0;
