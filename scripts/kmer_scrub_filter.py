@@ -211,9 +211,11 @@ def main():
                 ref_count = strain_hash.get(key, 0)
                 pan_count = pangenome_hash.get(key, 0)
                 meta_count = metagenome_hash.get(key, 0)
-                drug_count = drug_genome_hash.get(key, 0)
-    
-                f.write(f"{key}\t{ref_count}\t{pan_count}\t{meta_count}\t{drug_count}\n")
+                if drug_filter == 1:
+                    drug_count = drug_genome_hash.get(key, 0)
+                    f.write(f"{key}\t{ref_count}\t{pan_count}\t{meta_count}\t{drug_count}\n")
+                else:
+                    f.write(f"{key}\t{ref_count}\t{pan_count}\t{meta_count}\n")
 
 
     print("#total kmers in strain:" + str(all_kmers) + "," + str(len(strain_hash)) + " pangenome: " + str(len(pangenome_hash)) + " metagenome: " + str(len(metagenome_hash)))
