@@ -1,7 +1,8 @@
-#include <zlib.h>
+#include "zlib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "kseq.h"
 #include "BIO_sequence.h"
 #include "BIO_hash.h"
@@ -158,7 +159,7 @@ int main(int argc, char *argv[])
 
 void background_filter(const char *background_file, const double fraction_to_remove, const unsigned int num_inform_kmer, BIO_hash h, const int seed) {
 	unsigned int kmer_to_keep = (int) (num_inform_kmer * fraction_to_remove);
-	unsigned int *informative_kmer_background_counts = calloc(num_inform_kmer, sizeof(unsigned int));
+	unsigned int *informative_kmer_background_counts = (unsigned int*)calloc(num_inform_kmer, sizeof(unsigned int));
 	char **allKeys = BIO_getHashKeys(h);
 	int hash_size = BIO_getHashSize(h);
 	int kmer_count = 0;
@@ -323,7 +324,7 @@ void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1
 //			printf("file type is %d\n", is_PE);
 
 			if (is_PE == UNKNOWN_FILE_TYPE) {
-				printf("unknown file type skipping line\n");
+				printf("unknown file type skipping line (%s)\n", token);
 			}
 			else {
 				file1 = strtok(NULL, "\t");
@@ -382,13 +383,15 @@ void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1
         BIO_destroyHashKeys(allKeys);
 }
 
+/* this is where we spend most of the CPU time; have done quite a lot of optimization to speed up; major bottleneck is the hash; trying to improve that next... */
 void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, const int seed, FILE *out, gzFile *gzout, int hash_size, const int is_PE, const unsigned int genome_kmers, const unsigned int genome_informative_kmers) {
 	gzFile fp;
 	gzFile fp2 = NULL;
 	kseq_t *seq, *seq2;
 	int l, l2;
 	unsigned int i;
-	char *seedStrRevComp = (char*)malloc(sizeof(char) * seed+1);
+//	char *seedStrRevComp = (char*)malloc(sizeof(char) * seed+1);
+	char *seedStrRevComp = (char*)malloc(sizeof(char) * 10000);
 	char *sequence_PE1_copy = (char*)malloc(sizeof(char) * 10000);
 	int sequence_PE1_length = 0;
 	char *orientStr;
@@ -405,6 +408,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 	int total_read_informative_kmer_hits = 0;
 	long long unsigned int total_kmers_evaluated = 0;
 	long long unsigned int total_reads_evaluated = 0;
+	int has_N;
 //	int min_hits_for_informative_read = 5;
 //	int min_hits_for_good_match = 5;
 //	int min_hits_for_informative_read = 10;
@@ -413,7 +417,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 
 	fp = gzopen(PE1_file, "r");
 	if (fp == NULL) {
-		fprintf(stderr, "could not read file %s in quantify_hits_PE()\n", PE1_file);
+		fprintf(stderr, "could not read file (read1) %s in quantify_hits_PE() (error: %s)\n", PE1_file, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	seq = kseq_init(fp);
@@ -423,7 +427,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 		if (is_PE == IS_PAIRED_END) {
 			fp2 = gzopen(PE2_file, "r");
 			if (fp2 == NULL) {
-				fprintf(stderr, "could not read file %s in quantify_hits_PE()\n", PE2_file);
+				fprintf(stderr, "could not read file (read2) is_PE %s in quantify_hits_PE() (error: %s)\n", PE2_file), strerror(errno);
 				exit(EXIT_FAILURE);
 			}
 			seq2 = kseq_init(fp2);
@@ -435,25 +439,42 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 
 //	fprintf(stderr, "reading %s to check in hash %d\n", PE1, BIO_getHashSize(h));
 
+	char *seed_seq_rc;
 	while (l = kseq_read(seq) >= 0) {
-		read_kmer_hits = 0;
-		read_informative_kmer_hits = 0;
-		BIO_stringToUpper(seq->seq.s); // keep same case
-		seed_seq = seq->seq.s;
-
-		// need to copy this stuff because in interleaved files it is forgotten when I read the next one
-		strcpy(sequence_PE1_copy, seq->seq.s);
-		sequence_PE1_length = seq->seq.l;
-		total_reads_evaluated++;
-
-		/* do PE1 */
 		if (seq->seq.l >= seed) { // skip if a read has been trimmed shorter than the seed length
+			total_reads_evaluated++;
+			read_kmer_hits = 0;
+			read_informative_kmer_hits = 0;
+			sequence_PE1_length = seq->seq.l;
+			BIO_stringToUpper(seq->seq.s); // keep same case
+
+			seed_seq = seq->seq.s;
+
+			// need to copy this stuff because in interleaved files it is forgotten when I read the next one
+			strcpy(sequence_PE1_copy, seq->seq.s);
+
+			// make the reverse complement now so that we can move along the string using pointers and avoid complementing substrings over and over
+			strcpy(seedStrRevComp, seq->seq.s);
+			BIO_reverseComplement(seedStrRevComp);
+			seed_seq_rc = &seedStrRevComp[sequence_PE1_length-seed];
+
+			/* do PE1 */
+
+			has_N = contains_N(seed_seq);
+
 			for (i = 0; i<seq->seq.l - seed+1; i++) { // for each possible seed position
 				temp_nuc = seed_seq[seed];
 				seed_seq[seed] = '\0';
+				seed_seq_rc[seed] = '\0';
+//				printf("%s\n%s\n\n", seed_seq, seedStrRevComp);
+				//if (total_reads_evaluated == 10) { exit(0);}
+                                if (strcmp(seed_seq, seed_seq_rc) > 0) //  orient the strings doing the upfront revcomp with pointer shifts is slightly faster than the orient_string function
+                                        orientStr = seed_seq;
+                                else
+                                        orientStr = seed_seq_rc;
 	
-				orientStr = orient_string(seed_seq, seedStrRevComp, seed);
-				if (!contains_N(orientStr)) {
+//				orientStr = orient_string(seed_seq, seedStrRevComp, seed);
+				if (!has_N || !contains_N(orientStr)) {
 					count = (unsigned int*)BIO_searchHash(h,orientStr);
 					if (count != NULL) {
 //						*count+=1; // increment the n-mer
@@ -465,29 +486,43 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 	
 				seed_seq[seed] = temp_nuc;
 				seed_seq++;
+				seed_seq_rc--;
 				total_kmers_evaluated++;
 			}
 		}
 
 		/* do PE2 */
 		if (is_PE) {
-			read_kmer_hits_pe2 = 0;
-			read_informative_kmer_hits_pe2 = 0;
 			l2 = kseq_read(seq2);
-			if (l2 < 0) {
-				fprintf(stderr, "reached end of PE2 (%s) before end of PE1 (%s), check that file names are correct\n", PE2_file, PE1_file);
-				exit(EXIT_FAILURE);
-			}
-			BIO_stringToUpper(seq2->seq.s); // keep same case
-			seed_seq = seq2->seq.s;
-
 			if (seq2->seq.l >= seed) { // skip if a read has been trimmed shorter than the seed length
+
+				read_kmer_hits_pe2 = 0;
+				read_informative_kmer_hits_pe2 = 0;
+				if (l2 < 0) {
+					fprintf(stderr, "reached end of PE2 (%s) before end of PE1 (%s), check that file names are correct\n", PE2_file, PE1_file);
+					exit(EXIT_FAILURE);
+				}
+				BIO_stringToUpper(seq2->seq.s); // keep same case
+				seed_seq = seq2->seq.s;
+				has_N = contains_N(seed_seq);
+
+				// make the reverse complement now so that we can move along the string using pointers and avoid complementing substrings over and over
+				strcpy(seedStrRevComp, seq2->seq.s);
+				BIO_reverseComplement(seedStrRevComp);
+				seed_seq_rc = &seedStrRevComp[seq2->seq.l - seed];
+
 				for (i = 0; i<seq2->seq.l - seed+1; i++) { // for each possible seed position
 					temp_nuc = seed_seq[seed];
 					seed_seq[seed] = '\0';
+					seed_seq_rc[seed] = '\0';
 		
-					orientStr = orient_string(seed_seq, seedStrRevComp, seed);
-					if (!contains_N(orientStr)) {
+				//	orientStr = orient_string(seed_seq, seedStrRevComp, seed);
+                                	if (strcmp(seed_seq, seed_seq_rc) > 0) //  orient the strings doing the upfront revcomp with pointer shifts is slightly faster than the orient_string function
+                                	        orientStr = seed_seq;
+                                	else
+                                	        orientStr = seed_seq_rc;
+
+					if (!has_N || !contains_N(orientStr)) {
 						count = (unsigned int*)BIO_searchHash(h,orientStr);
 						if (count != NULL) {
 //							*count+=1; // increment the n-mer
@@ -499,6 +534,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 		
 					seed_seq[seed] = temp_nuc;
 					seed_seq++;
+					seed_seq_rc--;
 					total_kmers_evaluated++;
 				}
 			}
@@ -508,7 +544,7 @@ void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, co
 		total_read_informative_kmer_hits = read_informative_kmer_hits + read_informative_kmer_hits_pe2;
 
 //		if ((read_kmer_hits >= min_hits_for_good_match || read_kmer_hits_pe2 >= min_hits_for_good_match) && (read_informative_kmer_hits > min_hits_for_informative_read || read_informative_kmer_hits_pe2 > min_hits_for_informative_read)) {
-		if (total_read_kmer_hits >= min_hits_for_good_match && total_read_informative_kmer_hits > min_hits_for_informative_read) {
+		if (total_read_kmer_hits >= min_hits_for_good_match && total_read_informative_kmer_hits >= min_hits_for_informative_read) {
 
 			/* no longer using the read hits output as was not as useful as the kmer coverage / depth */
 			/* printf("%s\t%d\t%d\t%d\t%d\n", PE1_file, read_kmer_hits, read_informative_kmer_hits, read_kmer_hits_pe2, read_informative_kmer_hits_pe2); */
