@@ -19,6 +19,10 @@ with the kmer counts to the pangenome and metagenomes", required = False)
 parser.add_argument("--scrub_count_list", "-l", help = "A text file containing \
 a list of input files containing kmer counts", required = False)
 
+parser.add_argument("--output_scrub_count_file", "-o", help = "The name of a \
+file in which to write a combined scrub count file, with scrub count totals \
+from all input files when the --scrub_count_list flag is used", required = False)
+
 parser.add_argument("--min_fraction", "-m", help = "The minimum fraction of  \
 kmers to keep (so don't scrub everything); default 0.04; range (0.0-1.0)", required = False, default = 0.04, type=float)
 
@@ -192,13 +196,24 @@ def main():
                         drug_filter = 1
                         content[4] = int(content[4])        
                         if (content[4] > 0):
-                            drug_genome_hash[key] = drug_genome_hash.get(key, 0) + content[3]
+                            drug_genome_hash[key] = drug_genome_hash.get(key, 0) + content[4]
                     #strain_hash[key] = content[1]
                     #print("A:" + content[0] + " B:" + content[1] + " C:" + content[2])
 
         if i > 1:
             if strain_hash != previous_strain_hash:
                 sys.exit("error: input files do not have identical hash and strain hash values.")
+
+    if args.output_scrub_count_file:
+        with open(args.output_scrub_count_file, 'w') as f:
+            f.write("#kmer\treference_count\tpangenome_count\tmetagenome_count\tdrug_count\n")
+            for key in strain_hash.keys():
+                ref_count = strain_hash.get(key, 0)
+                pan_count = pangenome_hash.get(key, 0)
+                meta_count = metagenome_hash.get(key, 0)
+                drug_count = drug_genome_hash.get(key, 0)
+    
+                f.write(f"{key}\t{ref_count}\t{pan_count}\t{meta_count}\t{drug_count}\n")
 
 
     print("#total kmers in strain:" + str(all_kmers) + "," + str(len(strain_hash)) + " pangenome: " + str(len(pangenome_hash)) + " metagenome: " + str(len(metagenome_hash)))
