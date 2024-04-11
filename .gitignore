@@ -1,0 +1,4 @@
+src/*.o
+src/genome_compare
+src/
+src/kmer_scrub_count
