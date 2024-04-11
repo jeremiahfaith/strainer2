@@ -1,4 +1,9 @@
 src/*.o
 src/genome_compare
-src/
 src/kmer_scrub_count
+src/strain_detect
+src/BIO_hash
+src/BIO_sequence
+src/kseq
+src/main
+src/up2bit
