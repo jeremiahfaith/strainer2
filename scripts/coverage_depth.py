@@ -125,10 +125,6 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
                     genome_total_informative_kmer[metagenomics_sample] = value
 
                 #print("adding ", metagenomics_sample, " ", variable, " ", value)
-        #print(individual_kmer_count_by_metagenome)
-        #print(kmer_coverage_count_by_metagenome)
-    with open('myfile.txt', 'w') as f:
-        print(individual_kmer_count_by_metagenome, file=f)
 
     # if we see the global statistics for a metagenome but not any informative kmer counts, it means the metagenome had no informative kmer counts, set to 0
     for metagenome in kmer_total_evaluated_by_metagenome:
