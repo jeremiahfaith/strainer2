@@ -128,7 +128,9 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
 
     # if we see the global statistics for a metagenome but not any informative kmer counts, it means the metagenome had no informative kmer counts, set to 0
     for metagenome in kmer_total_evaluated_by_metagenome:
+        individual_kmer_count_by_metagenome.setdefault(metagenome, defaultdict(int))
         individual_kmer_counts = list(individual_kmer_count_by_metagenome[metagenome].values())
+        
         num_kmers_counted = len(individual_kmer_counts)
         num_kmers_missing = genome_total_informative_kmer[metagenome] - num_kmers_counted
         individual_kmer_counts = individual_kmer_counts + [0] * num_kmers_missing
