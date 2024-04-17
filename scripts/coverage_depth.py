@@ -67,7 +67,10 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
     unique_kmers_by_metagenome = defaultdict(int)
     individual_kmer_count_by_metagenome = {} # Andrea addition
     median_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
-    trimmed_mean_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
+    trimmed_mean_0_5perc_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
+    trimmed_mean_1perc_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
+    trimmed_mean_2_5perc_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
+    trimmed_mean_5perc_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
     stdev_kmer_depth_by_metagenome = defaultdict(int) # Andrea addition
     kmer_total_evaluated_by_metagenome = defaultdict(int)
     read_total_evaluated_by_metagenome = defaultdict(int)
@@ -138,8 +141,17 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
         median_kmer_depth = np.percentile(individual_kmer_counts, 50)
         median_kmer_depth_by_metagenome[metagenome] = median_kmer_depth
 
-        trimmed_mean_kmer_depth = scipy.stats.trim_mean(individual_kmer_counts, 0.01)
-        trimmed_mean_kmer_depth_by_metagenome[metagenome] = trimmed_mean_kmer_depth
+        trimmed_mean_0_5perc_kmer_depth = scipy.stats.trim_mean(individual_kmer_counts, 0.005)
+        trimmed_mean_0_5perc_kmer_depth_by_metagenome[metagenome] = trimmed_mean_0_5perc_kmer_depth
+
+        trimmed_mean_1perc_kmer_depth = scipy.stats.trim_mean(individual_kmer_counts, 0.01)
+        trimmed_mean_1perc_kmer_depth_by_metagenome[metagenome] = trimmed_mean_1perc_kmer_depth
+
+        trimmed_mean_2_5perc_kmer_depth = scipy.stats.trim_mean(individual_kmer_counts, 0.025)
+        trimmed_mean_2_5perc_kmer_depth_by_metagenome[metagenome] = trimmed_mean_2_5perc_kmer_depth
+
+        trimmed_mean_5perc_kmer_depth = scipy.stats.trim_mean(individual_kmer_counts, 0.05)
+        trimmed_mean_5perc_kmer_depth_by_metagenome[metagenome] = trimmed_mean_5perc_kmer_depth
 
         stdev_kmer_depth = np.std(individual_kmer_counts)
         stdev_kmer_depth_by_metagenome[metagenome] = stdev_kmer_depth
@@ -151,11 +163,19 @@ def count_passed_kmers(kmer_hits_file, min_kmer_hits, kmer_read_hit_count):
 
     
     #print(kmer_coverage_by_metagenome)
-    return kmer_depth_count_by_metagenome, kmer_coverage_count_by_metagenome, \
-        kmer_total_evaluated_by_metagenome, read_total_evaluated_by_metagenome, \
-            genome_total_kmer, genome_total_informative_kmer, \
-                median_kmer_depth_by_metagenome, trimmed_mean_kmer_depth_by_metagenome, \
-                    stdev_kmer_depth_by_metagenome
+    return \
+        kmer_depth_count_by_metagenome, \
+        kmer_coverage_count_by_metagenome, \
+        kmer_total_evaluated_by_metagenome, \
+        read_total_evaluated_by_metagenome, \
+        genome_total_kmer, \
+        genome_total_informative_kmer, \
+        median_kmer_depth_by_metagenome, \
+        trimmed_mean_0_5perc_kmer_depth_by_metagenome, \
+        trimmed_mean_1perc_kmer_depth_by_metagenome, \
+        trimmed_mean_2_5perc_kmer_depth_by_metagenome, \
+        trimmed_mean_5perc_kmer_depth_by_metagenome, \
+        stdev_kmer_depth_by_metagenome
 
 def get_background_meta(background_file):
 
@@ -228,11 +248,19 @@ def read_metagenome_files(metagenome_file_list):
 
 def main():
 #    num_total_kmers = count_total_kmers(args.scrubbed_kmers_file)
-    kmers_depth_count_in_metagenome, kmers_coverage_count_in_metagenome, \
-        kmer_total_evaluated_by_metagenome, read_total_evaluated_by_metagenome, \
-            genome_total_kmer, genome_total_informative_kmer, \
-                median_kmer_depth_by_metagenome, trimmed_mean_kmer_depth_by_metagenome, \
-                    stdev_kmer_depth_by_metagenome = count_passed_kmers(args.kmer_hits_file, args.min_kmer_hits, True)
+    kmers_depth_count_in_metagenome, \
+    kmers_coverage_count_in_metagenome, \
+    kmer_total_evaluated_by_metagenome, \
+    read_total_evaluated_by_metagenome, \
+    genome_total_kmer, \
+    genome_total_informative_kmer, \
+    median_kmer_depth_by_metagenome, \
+    trimmed_mean_0_5perc_kmer_depth_by_metagenome, \
+    trimmed_mean_1perc_kmer_depth_by_metagenome, \
+    trimmed_mean_2_5perc_kmer_depth_by_metagenome, \
+    trimmed_mean_5perc_kmer_depth_by_metagenome, \
+    stdev_kmer_depth_by_metagenome \
+    = count_passed_kmers(args.kmer_hits_file, args.min_kmer_hits, True)
 
     strain_name = os.path.basename(args.kmer_hits_file)
     strain_name = re.sub(".kmer_hits.gz$", "", strain_name)
@@ -247,16 +275,36 @@ def main():
 
 
     # TO DO: parse the truth table and add that to the print out below (i.e., if it is a know true hit or not
-#    truth_table = {}
+    # truth_table = {}
     background_meta = {}
     if (args.background_metagenomes_file):
         background_meta = get_background_meta(args.background_metagenomes_file)
 
+    columns = ("\t").join(
+        ["strain_name",
+        "species_name",
+        "genus_name",
+        "genome_num_total_kmers",
+        "genome_num_informative_kmers",
+        "metagenome",
+        "num_metagenomic_reads",
+        "num_metagenome_kmers",
+        "unique_observed_informative_kmers",
+        "total_observed_informative_kmers",
+        "kmer_coverage",
+        "kmer_depth_mean",
+        "kmer_depth_stdev",
+        "kmer_depth_trimmed_mean_0.5perc",
+        "kmer_depth_trimmed_mean_1perc",
+        "kmer_depth_trimmed_mean_2.5perc",
+        "kmer_depth_trimmed_mean_5perc",
+        "kmer_depth_median",
+        "kmer_depth_per_20B_kmer",
+        "background"]
+    )
 
-#    print("strain_name\tspecies_name\tgenus_name\tnum_informative_kmers\tmetagenome\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth\tbase_metagenome\ttruth\tmetagenomic_reads\tmetagenome_reads_group\tkmer_depth_per_20B_kmer")
-#    print("strain_name\tspecies_name\tgenus_name\tgenome_num_total_kmers\tgenome_num_informative_kmers\tmetagenome\tnum_metagenomic_reads\tnum_metagenome_kmers\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth\tkmer_depth_per_20B_kmer\tbase_metagenome\tbackground")
-    print("strain_name\tspecies_name\tgenus_name\tgenome_num_total_kmers\tgenome_num_informative_kmers\tmetagenome\tnum_metagenomic_reads\tnum_metagenome_kmers\tunique_observed_informative_kmers\ttotal_observed_informative_kmers\tkmer_coverage\tkmer_depth_mean\tkmer_depth_stdev\tkmer_depth_trimmed_mean\tkmer_depth_median\tkmer_depth_per_20B_kmer\tbackground")
-#    for metagenome in metagenome_targets:
+    print(columns)
+#   for metagenome in metagenome_targets:
     for metagenome in kmers_depth_count_in_metagenome:
         read_count = "NA"
         read_count_group = "NA"
@@ -285,10 +333,16 @@ def main():
             num_genome_total_informative_kmer = genome_total_informative_kmer[metagenome]
         if (metagenome in median_kmer_depth_by_metagenome):
             median_kmer_depth = median_kmer_depth_by_metagenome[metagenome]
-        if (metagenome in median_kmer_depth_by_metagenome):
-            trimmed_mean_kmer_depth = trimmed_mean_kmer_depth_by_metagenome[metagenome]            
+        if (metagenome in trimmed_mean_0_5perc_kmer_depth_by_metagenome):
+            trimmed_mean_0_5perc_kmer_depth = trimmed_mean_0_5perc_kmer_depth_by_metagenome[metagenome]    
+        if (metagenome in trimmed_mean_1perc_kmer_depth_by_metagenome):
+            trimmed_mean_1perc_kmer_depth = trimmed_mean_1perc_kmer_depth_by_metagenome[metagenome]            
+        if (metagenome in trimmed_mean_2_5perc_kmer_depth_by_metagenome):
+            trimmed_mean_2_5perc_kmer_depth = trimmed_mean_2_5perc_kmer_depth_by_metagenome[metagenome]    
+        if (metagenome in trimmed_mean_5perc_kmer_depth_by_metagenome):
+            trimmed_mean_5perc_kmer_depth = trimmed_mean_5perc_kmer_depth_by_metagenome[metagenome]    
         if (metagenome in stdev_kmer_depth_by_metagenome):
-            trimmed_mean_stdev_kmer_depth = stdev_kmer_depth_by_metagenome[metagenome] 
+            stdev_kmer_depth = stdev_kmer_depth_by_metagenome[metagenome] 
 
         kmer_coverage = num_observed_unique_kmers_in_metagenome / float(num_genome_total_informative_kmer)
         kmer_depth = num_observed_kmers_in_metagenome / float(num_genome_total_informative_kmer)
@@ -307,15 +361,30 @@ def main():
         if (metagenome in background_meta):
             background_status = 1
 
-        print(strain_name + "\t" + species_name + "\t" + genus_name + "\t" + 
-            str(num_genome_total_kmer) + "\t" + str(num_genome_total_informative_kmer) + 
-            "\t" + metagenome + "\t" + str(num_reads_in_metagenome) + "\t" + 
-            str(num_evaluated_kmers_in_metagenome) + "\t" + str(num_observed_unique_kmers_in_metagenome) + 
-            "\t" + str(num_observed_kmers_in_metagenome) + "\t" + str(kmer_coverage) + "\t" + 
-            str(kmer_depth) + "\t" + str(trimmed_mean_stdev_kmer_depth) + "\t" + 
-            str(trimmed_mean_kmer_depth) + "\t" + str(median_kmer_depth) + "\t" + 
-            str(kmer_depth_scale) + "\t" + str(background_status))
-            
+        values = [strain_name,
+            species_name,
+            genus_name,
+            num_genome_total_kmer,
+            num_genome_total_informative_kmer,
+            metagenome,
+            num_reads_in_metagenome,
+            num_evaluated_kmers_in_metagenome,
+            num_observed_unique_kmers_in_metagenome,
+            num_observed_kmers_in_metagenome,
+            kmer_coverage,
+            kmer_depth,
+            stdev_kmer_depth,
+            trimmed_mean_0_5perc_kmer_depth,
+            trimmed_mean_1perc_kmer_depth,
+            trimmed_mean_2_5perc_kmer_depth,
+            trimmed_mean_5perc_kmer_depth,
+            median_kmer_depth,
+            kmer_depth_scale,
+            background_status]
+
+        values = ("\t").join([str(value) for value in values])
+
+        print(values)
 
 if __name__ == "__main__":
         main()
