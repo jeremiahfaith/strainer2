@@ -51,8 +51,8 @@ KSEQ_INIT(gzFile, gzread)
 
 void usage();
 unsigned int hash_scrubbed_kmers(const char *filename, BIO_hash h, const int seed);
-void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1, const char *file_PE2, BIO_hash h, const int seed, const char *outfile, int is_paired_end);
-void quantify_hits_PE(const char *PE1, const char *PE2, BIO_hash h, const int seed, FILE *out, gzFile *gzout, int hash_size, const int is_paired_end, const unsigned int genome_kmers, const unsigned int genome_informative_kmers);
+void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1, const char *file_PE2, BIO_hash h, const int seed, const char *outfile, int is_PE);
+void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, const int seed, FILE *out, gzFile gzout, int hash_size, const int is_PE, const unsigned int genome_kmers, const unsigned int genome_informative_kmers);
 void background_filter(const char *background_file, const double fraction_to_remove, const unsigned int num_inform_kmer, BIO_hash h, const int seed);
 unsigned int get_file_type(const char *filetype);
 int compare (const void *a, const void *b);
@@ -278,7 +278,7 @@ void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1
 	unsigned int total_genome_informative_kmers = 0;
 	int i;
         unsigned int *count = NULL;
-	gzFile *gzout = NULL;
+	gzFile gzout = NULL;
 	FILE *out = NULL;
 
 
@@ -384,7 +384,7 @@ void quantify_hits_all_files(const char *file_of_filenames, const char *file_PE1
 }
 
 /* this is where we spend most of the CPU time; have done quite a lot of optimization to speed up; major bottleneck is the hash; trying to improve that next... */
-void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, const int seed, FILE *out, gzFile *gzout, int hash_size, const int is_PE, const unsigned int genome_kmers, const unsigned int genome_informative_kmers) {
+void quantify_hits_PE(const char *PE1_file, const char *PE2_file, BIO_hash h, const int seed, FILE *out, gzFile gzout, int hash_size, const int is_PE, const unsigned int genome_kmers, const unsigned int genome_informative_kmers) {
 	gzFile fp;
 	gzFile fp2 = NULL;
 	kseq_t *seq, *seq2;
@@ -762,4 +762,3 @@ void usage() {
 //
 	return;
 }
-
